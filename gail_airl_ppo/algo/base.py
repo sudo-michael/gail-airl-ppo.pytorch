@@ -5,7 +5,6 @@ import torch
 
 
 class Algorithm(ABC):
-
     def __init__(self, state_shape, action_shape, device, seed, gamma):
         np.random.seed(seed)
         torch.manual_seed(seed)

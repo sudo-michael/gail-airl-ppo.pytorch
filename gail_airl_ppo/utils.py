@@ -31,7 +31,7 @@ def collect_demo(env, algo, buffer_size, device, std, p_rand, seed=0):
         buffer_size=buffer_size,
         state_shape=env.observation_space.shape,
         action_shape=env.action_space.shape,
-        device=device
+        device=device,
     )
 
     total_return = 0.0
@@ -64,5 +64,5 @@ def collect_demo(env, algo, buffer_size, device, std, p_rand, seed=0):
 
         state = next_state
 
-    print(f'Mean return of the expert is {total_return / num_episodes}')
+    print(f"Mean return of the expert is {total_return / num_episodes}")
     return buffer

@@ -12,15 +12,16 @@ def run(args):
     env = make_env(args.env_id)
     env_test = make_env(args.env_id)
 
-    algo = SAC(
+    algo = SACExpert(
         state_shape=env.observation_space.shape,
         action_shape=env.action_space.shape,
         device=torch.device("cuda" if args.cuda else "cpu"),
-        seed=args.seed,
+        path=args.weight,
     )
-
+    
     time = datetime.now().strftime("%Y%m%d-%H%M")
-    log_dir = os.path.join("logs", args.env_id, "sac", args.run_name, f"seed{args.seed}-{time}")
+    log_dir = os.path.join("logs", args.env_id, "sac", f"seed{args.seed}-{time}")
+
 
     trainer = Trainer(
         env=env,
@@ -31,11 +32,14 @@ def run(args):
         eval_interval=args.eval_interval,
         seed=args.seed,
     )
-    trainer.train()
+    trainer.evaluate()
+
+
+
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--run_name", type=str, required=True)
+    p.add_argument("--weight", type=str, required=True)
     p.add_argument("--num_steps", type=int, default=10 ** 6)
     p.add_argument("--eval_interval", type=int, default=10 ** 4)
     p.add_argument("--env_id", type=str, default="Hopper-v3")

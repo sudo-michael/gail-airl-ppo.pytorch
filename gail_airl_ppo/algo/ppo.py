@@ -6,6 +6,8 @@ from .base import Algorithm
 from gail_airl_ppo.buffer import RolloutBuffer
 from gail_airl_ppo.network import StateIndependentPolicy, StateFunction
 
+import os
+
 
 def calculate_gae(values, rewards, dones, next_values, gamma, lambd):
     # Calculate TD errors.
@@ -22,12 +24,25 @@ def calculate_gae(values, rewards, dones, next_values, gamma, lambd):
 
 
 class PPO(Algorithm):
-
-    def __init__(self, state_shape, action_shape, device, seed, gamma=0.995,
-                 rollout_length=2048, mix_buffer=20, lr_actor=3e-4,
-                 lr_critic=3e-4, units_actor=(64, 64), units_critic=(64, 64),
-                 epoch_ppo=10, clip_eps=0.2, lambd=0.97, coef_ent=0.0,
-                 max_grad_norm=10.0):
+    def __init__(
+        self,
+        state_shape,
+        action_shape,
+        device,
+        seed,
+        gamma=0.995,
+        rollout_length=2048,
+        mix_buffer=20,
+        lr_actor=3e-4,
+        lr_critic=3e-4,
+        units_actor=(64, 64),
+        units_critic=(64, 64),
+        epoch_ppo=10,
+        clip_eps=0.2,
+        lambd=0.97,
+        coef_ent=0.0,
+        max_grad_norm=10.0,
+    ):
         super().__init__(state_shape, action_shape, device, seed, gamma)
 
         # Rollout buffer.
@@ -36,7 +51,7 @@ class PPO(Algorithm):
             state_shape=state_shape,
             action_shape=action_shape,
             device=device,
-            mix=mix_buffer
+            mix=mix_buffer,
         )
 
         # Actor.
@@ -44,14 +59,14 @@ class PPO(Algorithm):
             state_shape=state_shape,
             action_shape=action_shape,
             hidden_units=units_actor,
-            hidden_activation=nn.Tanh()
+            hidden_activation=nn.Tanh(),
         ).to(device)
 
         # Critic.
         self.critic = StateFunction(
             state_shape=state_shape,
             hidden_units=units_critic,
-            hidden_activation=nn.Tanh()
+            hidden_activation=nn.Tanh(),
         ).to(device)
 
         self.optim_actor = Adam(self.actor.parameters(), lr=lr_actor)
@@ -85,19 +100,17 @@ class PPO(Algorithm):
 
     def update(self, writer):
         self.learning_steps += 1
-        states, actions, rewards, dones, log_pis, next_states = \
-            self.buffer.get()
-        self.update_ppo(
-            states, actions, rewards, dones, log_pis, next_states, writer)
+        states, actions, rewards, dones, log_pis, next_states = self.buffer.get()
+        self.update_ppo(states, actions, rewards, dones, log_pis, next_states, writer)
 
-    def update_ppo(self, states, actions, rewards, dones, log_pis, next_states,
-                   writer):
+    def update_ppo(self, states, actions, rewards, dones, log_pis, next_states, writer):
         with torch.no_grad():
             values = self.critic(states)
             next_values = self.critic(next_states)
 
         targets, gaes = calculate_gae(
-            values, rewards, dones, next_values, self.gamma, self.lambd)
+            values, rewards, dones, next_values, self.gamma, self.lambd
+        )
 
         for _ in range(self.epoch_ppo):
             self.learning_steps_ppo += 1
@@ -113,8 +126,7 @@ class PPO(Algorithm):
         self.optim_critic.step()
 
         if self.learning_steps_ppo % self.epoch_ppo == 0:
-            writer.add_scalar(
-                'loss/critic', loss_critic.item(), self.learning_steps)
+            writer.add_scalar("loss/critic", loss_critic.item(), self.learning_steps)
 
     def update_actor(self, states, actions, log_pis_old, gaes, writer):
         log_pis = self.actor.evaluate_log_pi(states, actions)
@@ -122,11 +134,9 @@ class PPO(Algorithm):
 
         ratios = (log_pis - log_pis_old).exp_()
         loss_actor1 = -ratios * gaes
-        loss_actor2 = -torch.clamp(
-            ratios,
-            1.0 - self.clip_eps,
-            1.0 + self.clip_eps
-        ) * gaes
+        loss_actor2 = (
+            -torch.clamp(ratios, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * gaes
+        )
         loss_actor = torch.max(loss_actor1, loss_actor2).mean()
 
         self.optim_actor.zero_grad()
@@ -135,10 +145,28 @@ class PPO(Algorithm):
         self.optim_actor.step()
 
         if self.learning_steps_ppo % self.epoch_ppo == 0:
-            writer.add_scalar(
-                'loss/actor', loss_actor.item(), self.learning_steps)
-            writer.add_scalar(
-                'stats/entropy', entropy.item(), self.learning_steps)
+            writer.add_scalar("loss/actor", loss_actor.item(), self.learning_steps)
+            writer.add_scalar("stats/entropy", entropy.item(), self.learning_steps)
 
     def save_models(self, save_dir):
-        pass
+        super().save_models(save_dir)
+        # We only save actor to reduce workloads.
+        print(self.actor)
+        torch.save(self.actor.state_dict(), os.path.join(save_dir, "actor.pth"))
+
+
+class PPOExpert(PPO):
+    def __init__(self, state_shape, action_shape, device, path, units_actor=(64, 64)):
+        self.actor = StateIndependentPolicy(
+            state_shape=state_shape,
+            action_shape=action_shape,
+            hidden_units=units_actor,
+            hidden_activation=nn.Tanh(),
+        ).to(device)
+        self.actor.load_state_dict(torch.load(path))
+
+        for param in self.actor.net.parameters():
+            param.requires_grad = False
+
+        self.device = device
+

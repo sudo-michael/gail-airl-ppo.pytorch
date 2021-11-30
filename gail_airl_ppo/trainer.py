@@ -5,9 +5,17 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Trainer:
-
-    def __init__(self, env, env_test, algo, log_dir, seed=0, num_steps=10**5,
-                 eval_interval=10**3, num_eval_episodes=5):
+    def __init__(
+        self,
+        env,
+        env_test,
+        algo,
+        log_dir,
+        seed=0,
+        num_steps=10 ** 5,
+        eval_interval=10 ** 3,
+        num_eval_episodes=5,
+    ):
         super().__init__()
 
         # Env to collect samples.
@@ -16,15 +24,15 @@ class Trainer:
 
         # Env for evaluation.
         self.env_test = env_test
-        self.env_test.seed(2**31-seed)
+        self.env_test.seed(2 ** 31 - seed)
 
         self.algo = algo
         self.log_dir = log_dir
 
         # Log setting.
-        self.summary_dir = os.path.join(log_dir, 'summary')
+        self.summary_dir = os.path.join(log_dir, "summary")
         self.writer = SummaryWriter(log_dir=self.summary_dir)
-        self.model_dir = os.path.join(log_dir, 'model')
+        self.model_dir = os.path.join(log_dir, "model")
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
@@ -52,11 +60,11 @@ class Trainer:
             # Evaluate regularly.
             if step % self.eval_interval == 0:
                 self.evaluate(step)
-                self.algo.save_models(
-                    os.path.join(self.model_dir, f'step{step}'))
+                print(f'save model at: {os.path.join(self.model_dir, f"step{step}")}')
+                self.algo.save_models(os.path.join(self.model_dir, f"step{step}"))
 
         # Wait for the logging to be finished.
-        sleep(10)
+        sleep(1)
 
     def evaluate(self, step):
         mean_return = 0.0
@@ -66,18 +74,41 @@ class Trainer:
             episode_return = 0.0
             done = False
 
-            while (not done):
+            while not done:
                 action = self.algo.exploit(state)
                 state, reward, done, _ = self.env_test.step(action)
                 episode_return += reward
 
             mean_return += episode_return / self.num_eval_episodes
 
-        self.writer.add_scalar('return/test', mean_return, step)
-        print(f'Num steps: {step:<6}   '
-              f'Return: {mean_return:<5.1f}   '
-              f'Time: {self.time}')
+        self.writer.add_scalar("return/test", mean_return, step)
+        print(
+            f"Num steps: {step:<6}/{self.num_steps}  "
+            f"Return: {mean_return:<5.1f}   "
+            f"Time: {self.time}"
+        )
 
     @property
     def time(self):
         return str(timedelta(seconds=int(time() - self.start_time)))
+
+
+    def n_rollouts(self, n):
+        mean_return = 0.0
+
+        for i in range(n):
+            state = self.env_test.reset()
+            episode_return = 0.0
+            done = False
+
+            while not done:
+                action = self.algo.exploit(state)
+                state, reward, done, _ = self.env_test.step(action)
+                episode_return += reward
+
+            mean_return += episode_return / self.num_eval_episodes
+
+            self.writer.add_scalar("return/rollouts", mean_return, i)
+        print(
+            f"Return: {mean_return:<5.1f}   "
+        )

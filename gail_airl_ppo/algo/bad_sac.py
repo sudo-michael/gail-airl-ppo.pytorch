@@ -2,6 +2,7 @@ import os
 import torch
 from torch import nn
 from torch.optim import Adam
+import random
 
 from .base import Algorithm
 from gail_airl_ppo.buffer import Buffer
@@ -9,7 +10,7 @@ from gail_airl_ppo.utils import soft_update, disable_gradient
 from gail_airl_ppo.network import StateDependentPolicy, TwinnedStateActionFunction
 
 
-class SAC(Algorithm):
+class BADSAC(Algorithm):
     def __init__(
         self,
         state_shape,
@@ -87,7 +88,7 @@ class SAC(Algorithm):
     def step(self, env, state, t, step):
         t += 1
 
-        if step <= self.start_steps:
+        if step <= self.start_steps or random.random() < 0.36:
             action = env.action_space.sample()
         else:
             action = self.explore(state)[0]
@@ -161,15 +162,12 @@ class SAC(Algorithm):
         soft_update(self.critic_target, self.critic, self.tau)
 
     def save_models(self, save_dir):
-        # super().save_models(save_dir)
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-
+        super().save_models(save_dir)
         # We only save actor to reduce workloads.
         torch.save(self.actor.state_dict(), os.path.join(save_dir, "actor.pth"))
 
 
-class SACExpert(SAC):
+class BADSACExpert(BADSAC):
     def __init__(self, state_shape, action_shape, device, path, units_actor=(256, 256)):
         self.actor = StateDependentPolicy(
             state_shape=state_shape,
