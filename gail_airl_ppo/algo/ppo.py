@@ -151,7 +151,6 @@ class PPO(Algorithm):
     def save_models(self, save_dir):
         super().save_models(save_dir)
         # We only save actor to reduce workloads.
-        print(self.actor)
         torch.save(self.actor.state_dict(), os.path.join(save_dir, "actor.pth"))
 
 

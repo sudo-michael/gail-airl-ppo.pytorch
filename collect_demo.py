@@ -7,6 +7,9 @@ from gail_airl_ppo.algo import SACExpert
 from gail_airl_ppo.utils import collect_demo
 
 
+from tqdm import tqdm
+import gym
+
 def run(args):
     env = make_env(args.env_id)
 
@@ -16,6 +19,7 @@ def run(args):
         device=torch.device("cuda" if args.cuda else "cpu"),
         path=args.weight,
     )
+
 
     buffer = collect_demo(
         env=env,
@@ -30,7 +34,7 @@ def run(args):
         os.path.join(
             "buffers",
             args.env_id,
-            f"size{args.buffer_size}_std{args.std}_prand{args.p_rand}.pth",
+            f"size{args.buffer_size}_std{args.std}_prand{args.p_rand}_{args.name}.pth",
         )
     )
 
@@ -39,6 +43,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--weight", type=str, required=True)
     p.add_argument("--env_id", type=str, default="Hopper-v3")
+    p.add_argument("--name", type=str, required=True)
     p.add_argument("--buffer_size", type=int, default=10 ** 6)
     p.add_argument("--std", type=float, default=0.0)
     p.add_argument("--p_rand", type=float, default=0.0)

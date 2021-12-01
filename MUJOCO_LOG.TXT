@@ -1,0 +1,24 @@
+Tue Nov 30 16:22:13 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:09:16 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:09:45 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:09:56 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:11:25 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:12:48 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:17:05 2021
+ERROR: GLEW initalization error: Missing GL version
+
+Tue Nov 30 17:19:21 2021
+ERROR: GLEW initalization error: Missing GL version
+

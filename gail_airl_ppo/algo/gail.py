@@ -90,7 +90,7 @@ class GAIL(PPO):
         self.update_ppo(states, actions, rewards, dones, log_pis, next_states, writer)
 
     def update_disc(self, states, actions, states_exp, actions_exp, writer):
-        # Output of discriminator is (-inf, inf), not [0, 1].
+       # Output of discriminator is (-inf, inf), not [0, 1].
         logits_pi = self.disc(states, actions)
         logits_exp = self.disc(states_exp, actions_exp)
 

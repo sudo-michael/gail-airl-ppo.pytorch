@@ -106,9 +106,4 @@ class Trainer:
                 state, reward, done, _ = self.env_test.step(action)
                 episode_return += reward
 
-            mean_return += episode_return / self.num_eval_episodes
-
-            self.writer.add_scalar("return/rollouts", mean_return, i)
-        print(
-            f"Return: {mean_return:<5.1f}   "
-        )
+            print(f"epi return {episode_return}")

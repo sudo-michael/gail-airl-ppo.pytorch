@@ -13,3 +13,7 @@ python train_imitation.py \
     --buffer buffers/InvertedPendulum-v2/size1000000_std0.01_prand0.0.pth \
     --num_steps 100000 --eval_interval 5000 --rollout_length 2000 --seed 0
 
+# 
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLEW.so
+
+
