@@ -102,6 +102,7 @@ class Trainer:
             done = False
 
             while not done:
+                self.env_test.render()
                 action = self.algo.exploit(state)
                 state, reward, done, _ = self.env_test.step(action)
                 episode_return += reward

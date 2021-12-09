@@ -15,7 +15,6 @@ def run(args):
     env = make_env(args.env_id)
     env = gym.Monitor(env, './videos/test')
 
-
     algo = ALGOS[args.algo](
         buffer_exp=buffer_exp,
         state_shape=env.observation_space.shape,
